@@ -1,0 +1,41 @@
+package chen.netty.lineSplit;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.util.CharsetUtil;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class LineBaseServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
+
+    private AtomicInteger counter = new AtomicInteger(0);
+
+    /*** 客户端读取到网络数据后的处理*/
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+        System.out.println("client Accept[" + msg.toString(CharsetUtil.UTF_8)
+                + "] and the counter is:" + counter.incrementAndGet());
+        ctx.close();
+    }
+
+    /*** 客户端被通知channel活跃后，做事*/
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        ByteBuf msg = null;
+        String request = "test1,test2,test3,test4,test5";
+        for (int i = 0; i < 10; i++) {
+            Thread.sleep(500);
+            System.out.println(System.currentTimeMillis() + ":即将发送数据：" + request);
+            msg = Unpooled.buffer(request.length());
+            msg.writeBytes(request.getBytes());
+            ctx.writeAndFlush(msg);
+        }
+    }
+
+    /*** 发生异常后的处理*/
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
+        ctx.close();
+    }
+}
